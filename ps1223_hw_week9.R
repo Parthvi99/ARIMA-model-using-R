@@ -1,0 +1,84 @@
+library(fpp)
+library(fpp2)
+data(Seatbelts)
+
+library(forecast)
+df1 <- ts(Seatbelts[,'DriversKilled'], frequency = 12)
+plot(df1)
+ndiffs(df1)
+Acf(df1)
+# we get ndiffs values as 1 which means we need lag difference of 1 to
+# get the stationary data 
+
+tsdisplay(df1)
+#from the acf plot we see seasonality in the data 
+# it plots the original time series but it tells you what the ACF and PACF is
+# For a stationary time series, the ACF will drop to zero relatively quickly..
+# In time series analysis, Autocorrelation Function (ACF) and the partial autocorrelation function (PACF) 
+# plots are essential in providing the model’s orders such as p for AR and q for MA to select the best model for forecasting.
+
+# The two blue dash lines represent the significant threshold levels. 
+# Anything that spikes over these two lines reveals the significant correlations.
+# When looking at ACF plot, we ignore the long spike at lag 0 (pointed by the blue arrow). For PACF, the line usually starts at 1.
+
+df1_diff1 <- diff(df1, differences=1)
+df1_diff1
+
+Acf(df1_diff1)
+plot(df1_diff1)
+# after taking the difference, 
+#the seasonality component is removed and the data becomes stationary
+
+tsdisplay(df1_diff1)
+auto_fit <- auto.arima(df1, trace=TRUE, stepwise = FALSE)
+# Best model: ARIMA(1,0,2)(0,1,1)[12]  
+
+auto_fit
+attributes(auto_fit)
+plot(forecast(auto_fit,h=5,level=c(99.5)))
+#Series: df1 
+#ARIMA(1,0,2)(0,1,1)[12] 
+
+# p is the number of autoregressive terms,
+# d is the number of nonseasonal differences needed for stationarity, and
+# q is the number of lagged forecast errors in the prediction equation.
+
+
+#Coefficients:
+#  ar1      ma1      ma2     sma1
+# 0.9760  -0.5926  -0.2105  -0.8752
+# s.e.  0.0264   0.0769   0.0733   0.0834
+
+#sigma^2 = 253.3:  log likelihood = -759.68
+#AIC=1529.35   AICc=1529.7   BIC=1545.32
+
+#Residual Analysis
+Acf(auto_fit$residuals)
+Box.test(residuals(auto_fit), lag=20, type="Ljung")
+plot.ts(residuals(auto_fit))
+hist(auto_fit$residuals)
+# we can that the normal distribution 
+# is a bit more towards the left tail of residuals
+
+tsdiag(auto_fit)
+
+# from the Ljung test we can see that the 
+# X-squared = 18.826, df = 20, p-value = 0.5331
+
+# from the test statistic Q(x-squared) is 18.26 and the 
+# p-value of the test is 0.53 which is greater that 0.05
+# and therefore we accept the null hypothesis and the 
+# data values are independent.
+
+
+# even from the tsdiag results we can see that the p-values are 
+# above the significant threshold(above 0.05) and so we can accept the null 
+# hypothesis
+
+
+
+
+
+
+
+
